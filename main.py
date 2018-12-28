@@ -12,6 +12,7 @@ url_1="https://kissanime.ru"
 url_2="https://kissanime.ru/AnimeList/NewAndHot"
 url_3="https://kissanime.ru/AnimeList/Newest"
 urls= []
+new_IMG= []
 def fetch(url): #url_1
     try:
         scraper = cfscrape.create_scraper()
@@ -55,10 +56,17 @@ def NEWEST(url): #url_3
             urls.append(a['href'])
     for i in range(len(urls)):
         urls[i]= "https://kissanime.ru" + urls[i]
-    for i in range(len(urls)):
-        urls[i]= "https://kissanime.ru" + urls[i]
-
-
+        for i in range(len(urls)):
+            new_IMG.append(GETIMG(urls[i]))
+    print(new_IMG)
+def GETIMG(url):
+    raw= fetch(url)
+    html= BS(raw, 'html.parser')
+    foo = html.find_all("div",class_="barContent")
+    a = foo.find_all("img")
+    print(a)
+    print(foo['src'])
+    return(foo['src'])
 def GUI(url):
     app = QApplication([])
     urls = NEWEST(url)
