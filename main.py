@@ -9,6 +9,7 @@ import asyncio
 import cfscrape
 import requests
 import re
+import urllib
 url_1="https://kissanime.ru"
 url_2="https://kissanime.ru/AnimeList/NewAndHot"
 url_3="https://kissanime.ru/AnimeList/Newest"
@@ -17,71 +18,60 @@ new_IMG= []
 links = []
 head= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
                 'Cookie': 'PHPSESSID=ldc1bp9mj7n4ocffvftm25te62'}
-def fetch(url): #url_1
-    try:
-        scraper = cfscrape.create_scraper()
-        with closing(scraper.get(url, stream=True)) as resp:
-            if response(resp):
-                print("Fetched!")
-                return(resp.content)
-            else:
-                print(response(resp))
-                print(resp.status_code)
+class HTML:
 
-    except RequestException as err:
-        log_error("Error during request to {0} : {1}".format(url,str(err)))
+    def fetch(self,url): #url_1
+        try:
+            scraper = cfscrape.create_scraper()
+            with closing(scraper.get(url, stream=True)) as resp:
+                if self.response(resp):
+                    print("Fetched!")
+                    raw = resp.content
+                    html = BS(raw, 'html.parser')
+                    return html
+                else:
+                    print(self.response(resp))
+                    print(resp.status_code)
+        except RequestException as err:
+                self.log_error("Error during request to {0} : {1}".format(url,str(err)))
 
-def response(resp):
-    content_type = resp.headers['Content-Type'].lower()
-    return(resp.status_code == 200)
+    def response(self,resp):
+        content_type = resp.headers['Content-Type'].lower()
+        print(resp.status_code)
+        return(resp.status_code == 200)
 
-def log_error(err):
-    print(err)
+    def log_error(self,err):
+        print(err)
 
-def parse(url):
-    raw = fetch(url)
-    html = BS(raw, 'html.parser')
-    for i in html.find_all("span", class_='title'):
-        print(i.get_text())
-def NEWHOT(url): #url_2
-    raw = fetch(url)
-    html = BS(raw, 'html.parser')
+def newhot(url): #url_2
     for i in html.find_all("tr"):
         i = i.get_text()
         i = " ".join(i.split())
         print(i)
         print("---------------------------------\n")
-
-def NEWEST(url): #url_3
-    raw = fetch(url)
-    html = BS(raw, 'html.parser')
-    for i in html.find_all("tr"):
-        for a in i.find_all("a",href=True):
-            urls.append(a['href'][0])
-    for i in range(len(urls)):
-        links.append("https://kissanime.ru" + urls[i])
-        new_IMG.append(GETIMG(links[i]))
-    print(new_IMG)
-def GETIMG(url):
-    ab = []
-    raw= fetch(url)
-    html= BS(raw, 'html.parser')
+def getimg(url):
+    wb = HTML()
+    html = wb.fetch(url)
     foo = html.find_all("img")
     foo=str(foo)
     foo = "".join(foo)
-    try:
-        urlz = re.search('https://kissanime.ru/Uploads/(.+?)[.]',foo)
-        print(urlz)
-        print(foo)
-    except AttributeError:
-        print("Not found")
-    urlz = str(urlz.group()) + "jpg"
-    return urlz
-def GUI(url):
+    foo = foo.split('img height="100px"')
+    n_h = foo[1:11]
+    rec = foo[11:21]
+    m_pop = foo[21:31]
+    for i in range(len(n_h)):
+        n_h[i] = (re.search('src="(.+?)"',n_h[i])).group(1)
+        rec[i] = (re.search('src="(.+?)"',rec[i])).group(1)
+        m_pop[i] = (re.search('src="(.+?)"',m_pop[i])).group(1)
+    return n_h,rec,m_pop
+
+def gui(url):
     urlgg= "https://kissanime.ru/Uploads/Etc/8-31-2018/543776545221170.jpg"
-    data = requests.get(url)
+    scraper = cfscrape.create_scraper()
+    data = scraper.get(urlgg, stream=True)
+    print(data.status_code)
+    data = data.raw.read()
     app = QApplication([])
-    urls = NEWEST(url)
     label = QLabel('Hello World!')
     pixmap= QImage()
     pixmap.loadFromData(data)
@@ -89,4 +79,4 @@ def GUI(url):
     label.show()
     app.exec_()
 
-GUI(url_3)
+gui(url_1)
