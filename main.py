@@ -7,12 +7,16 @@ from contextlib import closing
 from bs4 import BeautifulSoup as BS
 import asyncio
 import cfscrape
-import urllib.request
+import requests
+import re
 url_1="https://kissanime.ru"
 url_2="https://kissanime.ru/AnimeList/NewAndHot"
 url_3="https://kissanime.ru/AnimeList/Newest"
 urls= []
 new_IMG= []
+links = []
+head= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
+                'Cookie': 'PHPSESSID=ldc1bp9mj7n4ocffvftm25te62'}
 def fetch(url): #url_1
     try:
         scraper = cfscrape.create_scraper()
@@ -42,7 +46,7 @@ def parse(url):
 def NEWHOT(url): #url_2
     raw = fetch(url)
     html = BS(raw, 'html.parser')
-    for i in html.find_all("tr", class_='odd'):
+    for i in html.find_all("tr"):
         i = i.get_text()
         i = " ".join(i.split())
         print(i)
@@ -51,27 +55,33 @@ def NEWHOT(url): #url_2
 def NEWEST(url): #url_3
     raw = fetch(url)
     html = BS(raw, 'html.parser')
-    for i in html.find_all("tr", class_='odd'):
+    for i in html.find_all("tr"):
         for a in i.find_all("a",href=True):
-            urls.append(a['href'])
+            urls.append(a['href'][0])
     for i in range(len(urls)):
-        urls[i]= "https://kissanime.ru" + urls[i]
-        for i in range(len(urls)):
-            new_IMG.append(GETIMG(urls[i]))
+        links.append("https://kissanime.ru" + urls[i])
+        new_IMG.append(GETIMG(links[i]))
     print(new_IMG)
 def GETIMG(url):
+    ab = []
     raw= fetch(url)
     html= BS(raw, 'html.parser')
-    foo = html.find_all("div",class_="barContent")
-    a = foo.find_all("img")
-    print(a)
-    print(foo['src'])
-    return(foo['src'])
+    foo = html.find_all("img")
+    foo=str(foo)
+    foo = "".join(foo)
+    try:
+        urlz = re.search('https://kissanime.ru/Uploads/(.+?)[.]',foo)
+        print(urlz)
+        print(foo)
+    except AttributeError:
+        print("Not found")
+    urlz = str(urlz.group()) + "jpg"
+    return urlz
 def GUI(url):
+    urlgg= "https://kissanime.ru/Uploads/Etc/8-31-2018/543776545221170.jpg"
+    data = requests.get(url)
     app = QApplication([])
     urls = NEWEST(url)
-
-    data = urllib.request.urlopen(url).read()
     label = QLabel('Hello World!')
     pixmap= QImage()
     pixmap.loadFromData(data)
